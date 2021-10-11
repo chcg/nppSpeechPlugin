@@ -22,6 +22,7 @@
 #endif
 
 #include "PluginInterface.h"
+#include "Scintilla.h"
 #include <shlobj.h>
 
 #include <objbase.h>
@@ -249,7 +250,7 @@ void SpeakSelection()
 
 	if (editHandle != NULL)
 	{
-		struct TextRange tr;
+		struct Sci_TextRange tr{};
 
 		tr.chrg.cpMin = (long)SendMessage(editHandle, SCI_GETSELECTIONSTART, 0, 0);
 		tr.chrg.cpMax = (long)SendMessage(editHandle, SCI_GETSELECTIONEND, 0, 0);
