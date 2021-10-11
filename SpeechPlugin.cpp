@@ -22,6 +22,7 @@
 #endif
 
 #include "PluginInterface.h"
+#include "Scintilla.h"
 #include <shlobj.h>
 
 #include <objbase.h>
@@ -31,7 +32,6 @@
 #include <cassert>
 
 const TCHAR PLUGIN_NAME[] = __TEXT("Speech");
-//const char sectionName[] = "Speech Extesion";
 const int nbFunc = 6;
 
 NppData nppData;
@@ -57,13 +57,6 @@ BOOL APIENTRY DllMain( HANDLE /*hModule*/,
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			lstrcpy(funcItem[0]._itemName, TEXT("Speak Selection"));
-			lstrcpy(funcItem[1]._itemName, TEXT("Speak &Document"));
-			lstrcpy(funcItem[2]._itemName, TEXT("-SEPARATOR-"));
-			lstrcpy(funcItem[3]._itemName, TEXT("&Stop Speech"));
-			lstrcpy(funcItem[4]._itemName, TEXT("&Pause Speech"));
-			lstrcpy(funcItem[5]._itemName, TEXT("&Resume Speech"));
-
 			funcItem[0]._pFunc = SpeakSelection;
 			funcItem[1]._pFunc = SpeakDocument;
 			funcItem[2]._pFunc = NULL;
@@ -71,12 +64,12 @@ BOOL APIENTRY DllMain( HANDLE /*hModule*/,
 			funcItem[4]._pFunc = PauseSpeech;
 			funcItem[5]._pFunc = ResumeSpeech;
 
-			funcItem[0]._pShKey = NULL;
-			funcItem[1]._pShKey = NULL;
-			funcItem[2]._pShKey = NULL;
-			funcItem[3]._pShKey = NULL;
-			funcItem[4]._pShKey = NULL;
-			funcItem[5]._pShKey = NULL;
+			lstrcpy(funcItem[0]._itemName, __TEXT("Speak Selection"));
+			lstrcpy(funcItem[1]._itemName, __TEXT("Speak &Document"));
+			lstrcpy(funcItem[2]._itemName, __TEXT("-SEPARATOR-"));
+			lstrcpy(funcItem[3]._itemName, __TEXT("&Stop Speech"));
+			lstrcpy(funcItem[4]._itemName, __TEXT("&Pause Speech"));
+			lstrcpy(funcItem[5]._itemName, __TEXT("&Resume Speech"));
 
 			funcItem[0]._init2Check = false;
 			funcItem[1]._init2Check = false;
@@ -85,12 +78,16 @@ BOOL APIENTRY DllMain( HANDLE /*hModule*/,
 			funcItem[4]._init2Check = false;
 			funcItem[5]._init2Check = false;
 
-			gCanSpeek = SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
+			funcItem[0]._pShKey = NULL;
+			funcItem[1]._pShKey = NULL;
+			funcItem[2]._pShKey = NULL;
+			funcItem[3]._pShKey = NULL;
+			funcItem[4]._pShKey = NULL;
+			funcItem[5]._pShKey = NULL;
 		}
 		break;
 
 		case DLL_PROCESS_DETACH:
-			Cleanup();
 			break;
 
 		case DLL_THREAD_ATTACH:
@@ -106,6 +103,7 @@ BOOL APIENTRY DllMain( HANDLE /*hModule*/,
 extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
 {
 	nppData = notpadPlusData;
+    gCanSpeek = SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
 }
 
 extern "C" __declspec(dllexport) const TCHAR * getName()
@@ -124,9 +122,19 @@ HWND getCurrentHScintilla(int which)
 	return (which == 0)?nppData._scintillaMainHandle:nppData._scintillaSecondHandle;
 };
 
-extern "C" __declspec(dllexport) void beNotified(SCNotification * /*notifyCode*/)
+extern "C" __declspec(dllexport) void beNotified(SCNotification * notifyCode)
 {
-	//switch (notifyCode->nmhdr.code) { }
+	switch (notifyCode->nmhdr.code)
+	{
+	case NPPN_SHUTDOWN:
+	{
+		Cleanup();
+	}
+	break;
+
+	default:
+		return;
+	}
 }
 
 // Here you can process the Npp Messages 
@@ -231,7 +239,7 @@ void SpeakDocument()
 
 		if ( txtLen > 0 )
 		{		
-			std::string buf(txtLen+1, 0);
+			std::string buf(txtLen++, 0);
 
 			SendMessage(editHandle, SCI_GETTEXT, buf.size(), (LPARAM)&buf[0]);
 
@@ -249,14 +257,14 @@ void SpeakSelection()
 
 	if (editHandle != NULL)
 	{
-		struct TextRange tr;
+		struct Sci_TextRange tr{};
 
-		tr.chrg.cpMin = (long)SendMessage(editHandle, SCI_GETSELECTIONSTART, 0, 0);
-		tr.chrg.cpMax = (long)SendMessage(editHandle, SCI_GETSELECTIONEND, 0, 0);
+		tr.chrg.cpMin = (Sci_PositionCR)SendMessage(editHandle, SCI_GETSELECTIONSTART, 0, 0);
+		tr.chrg.cpMax = (Sci_PositionCR)SendMessage(editHandle, SCI_GETSELECTIONEND, 0, 0);
 
 		if( tr.chrg.cpMax > 0 && (tr.chrg.cpMax > tr.chrg.cpMin))
 		{
-			std::string buf(tr.chrg.cpMax - tr.chrg.cpMin + 1, 0);
+			std::string buf((tr.chrg.cpMax - (tr.chrg.cpMin++)), 0);
 			
 			tr.lpstrText = &buf[0];
 			SendMessage(editHandle, SCI_GETTEXTRANGE, 0, (LPARAM)&tr);
