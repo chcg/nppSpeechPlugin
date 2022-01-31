@@ -177,6 +177,7 @@
     <ClInclude Include="PluginInterface.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scintilla.h" />
+    <ClInclude Include="Sci_Position.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SpeechPlugin.rc" />

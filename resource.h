@@ -20,6 +20,6 @@
 /* VERSION DEFINITIONS */
 #define VER_MAJOR   1
 #define VER_MINOR   0
-#define VER_RELEASE 1
+#define VER_RELEASE 2 
 #define VER_BUILD   1
 #define VER_STRING  STR(VER_MAJOR) "." STR(VER_MINOR) "." STR(VER_RELEASE) "." STR(VER_BUILD)
